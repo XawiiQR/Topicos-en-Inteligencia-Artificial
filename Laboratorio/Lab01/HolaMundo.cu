@@ -5,7 +5,7 @@ __global__ void hello(void)
 }
 int main(int argc,char **argv)
 {
-    printf("CPU: Hello!\n");
+    printf("CPU: Hello Javi!\n");
     hello<<<1,10>>>();
     cudaDeviceReset();
     return 0;
