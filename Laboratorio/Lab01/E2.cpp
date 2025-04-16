@@ -2,6 +2,7 @@
 #include <cstdlib>
 #include <vector>
 #include <math.h>
+#include <chrono>
 
 using namespace std;
 const int N=1000;
