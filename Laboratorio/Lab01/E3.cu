@@ -1,65 +1,80 @@
 #include <iostream>
+#include <vector>
+#include <cstdlib>
 #include <cuda_runtime.h>
 #include <chrono>
 
-__global__ void vectorAdd(const float* A, const float* B, float* C, int N) {
+using namespace std;
+
+const int N = 1000;  // Puedes probar con más, como 1000000
+vector<float> A(N), B(N), C(N);
+
+// Kernel CUDA
+__global__ void vectorAddGPU(const float* A, const float* B, float* C, int N) {
     int i = blockIdx.x * blockDim.x + threadIdx.x;
     if (i < N)
         C[i] = A[i] + B[i];
 }
 
-int main() {
-    int N = 1000000; // Cambiar tamaño según sea necesario (> 1000)
+// Inicializa A y B con valores aleatorios
+void CrearVectores(vector<float>& A, vector<float>& B) {
+    srand(time(NULL));
+    for (int i = 0; i < N; i++) {
+        A[i] = (rand() % 1000) / 10.0f;
+        B[i] = (rand() % 1000) / 10.0f;
+    }
+}
+
+// Ejecuta la suma en GPU y mide tiempo
+float TiempoGPU(vector<float>& A, vector<float>& B, vector<float>& C) {
+    float *d_A, *d_B, *d_C;
     size_t size = N * sizeof(float);
 
-    // Host vectors
-    float* h_A = new float[N];
-    float* h_B = new float[N];
-    float* h_C = new float[N];
-
-    // Inicializar vectores
-    for (int i = 0; i < N; i++) {
-        h_A[i] = static_cast<float>(i);
-        h_B[i] = static_cast<float>(i * 2);
-    }
-
-    // Device vectors
-    float *d_A, *d_B, *d_C;
+    // Reservar memoria en la GPU
     cudaMalloc(&d_A, size);
     cudaMalloc(&d_B, size);
     cudaMalloc(&d_C, size);
 
-    // Copiar datos al dispositivo
-    cudaMemcpy(d_A, h_A, size, cudaMemcpyHostToDevice);
-    cudaMemcpy(d_B, h_B, size, cudaMemcpyHostToDevice);
+    // Copiar datos desde host a GPU
+    cudaMemcpy(d_A, A.data(), size, cudaMemcpyHostToDevice);
+    cudaMemcpy(d_B, B.data(), size, cudaMemcpyHostToDevice);
 
-    // Configurar ejecución en GPU
+    // Configurar kernel
     int threadsPerBlock = 256;
     int blocksPerGrid = (N + threadsPerBlock - 1) / threadsPerBlock;
 
-    // Medir tiempo
     auto start = std::chrono::high_resolution_clock::now();
 
-    // Ejecutar kernel en GPU
-    vectorAdd<<<blocksPerGrid, threadsPerBlock>>>(d_A, d_B, d_C, N);
+    // Ejecutar kernel
+    vectorAddGPU<<<blocksPerGrid, threadsPerBlock>>>(d_A, d_B, d_C, N);
     cudaDeviceSynchronize();
 
     auto end = std::chrono::high_resolution_clock::now();
-    std::chrono::duration<double, std::milli> duration_ms = end - start;
+    std::chrono::duration<float, std::milli> duration = end - start;
 
     // Copiar resultado de vuelta al host
-    cudaMemcpy(h_C, d_C, size, cudaMemcpyDeviceToHost);
+    cudaMemcpy(C.data(), d_C, size, cudaMemcpyDeviceToHost);
 
-    // Mostrar tiempo
-    std::cout << "Tiempo de ejecución en GPU: " << duration_ms.count() << " ms\n";
-
-    // Liberar memoria
+    // Liberar memoria en GPU
     cudaFree(d_A);
     cudaFree(d_B);
     cudaFree(d_C);
-    delete[] h_A;
-    delete[] h_B;
-    delete[] h_C;
+
+    return duration.count(); // tiempo en milisegundos
+}
+
+int main() {
+    CrearVectores(A, B);
+
+    float time = TiempoGPU(A, B, C);
+
+    for (int i = 0; i < 100; i++) {
+        cout << "A" << i << ": " << A[i]
+             << " + B" << i << ": " << B[i]
+             << " = C" << i << ": " << C[i] << endl;
+    }
+
+    cout << "El tiempo de ejecución en GPU fue: " << time << " ms" << endl;
 
     return 0;
 }
