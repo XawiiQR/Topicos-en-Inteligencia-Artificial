@@ -39,7 +39,7 @@ int main(){
     float time =Tiempo(A,B,C);
     
 
-    for(int i=0; i<100 ; i++)
+    for(int i=0; i<1000 ; i++)
     {
         cout<<"A"<<i<<": "<<A[i]<<" + "<<"B"<<i<<": "<<B[i]<<" = "<<"C"<<i<<": "<<C[i]<<endl;
     }
