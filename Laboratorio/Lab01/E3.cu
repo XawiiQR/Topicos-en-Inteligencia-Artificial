@@ -63,7 +63,7 @@ int main() {
     float time = TiempoGPU(A, B, C);
 
     for (int i = 0; i < 1000; i++) {
-        cout << "A" << i << ": " << A[i]
+        cout << "GPU "<<"A" << i << ": " << A[i]
              << " + B" << i << ": " << B[i]
              << " = C" << i << ": " << C[i] << endl;
     }

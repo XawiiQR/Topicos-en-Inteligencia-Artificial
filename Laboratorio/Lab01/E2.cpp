@@ -41,7 +41,7 @@ int main(){
 
     for(int i=0; i<1000 ; i++)
     {
-        cout<<"A"<<i<<": "<<A[i]<<" + "<<"B"<<i<<": "<<B[i]<<" = "<<"C"<<i<<": "<<C[i]<<endl;
+        cout<<"CPU  "<<"A"<<i<<": "<<A[i]<<" + "<<"B"<<i<<": "<<B[i]<<" = "<<"C"<<i<<": "<<C[i]<<endl;
     }
 
     cout<<"El tiempo en segundos fue: "<<time<<endl;
