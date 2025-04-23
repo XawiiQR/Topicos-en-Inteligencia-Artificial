@@ -11,7 +11,7 @@ __global__ void suma_vectores(float *c, float *a, float *b, int N) {
 }
 
 int main(void) {
-    t
+    
     float *a_h, *b_h, *c_h;
     
     float *a_d, *b_d, *c_d;
