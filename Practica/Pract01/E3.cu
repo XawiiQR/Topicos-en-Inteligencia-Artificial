@@ -29,8 +29,8 @@ int main(void) {
     // Punteros a matrices en el Device
     float *A_d, *B_d, *C_d;
     
-    int nfil = 12;  // Número de filas
-    int ncol = 12;  // Número de columnas
+    int nfil = 5;  // Número de filas
+    int ncol = 5;  // Número de columnas
     int N = nfil * ncol;  // Número de elementos en la matriz
 
     size_t size = N * sizeof(float);  // Tamaño de los arreglos
