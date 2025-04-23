@@ -1,3 +1,6 @@
+
+// compile with: nvcc practica01.cu -o p1
+// ./p1
 #include <stdio.h>
 #include <stdlib.h>
 #include <cuda_runtime.h>
