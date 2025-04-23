@@ -29,7 +29,7 @@ void CrearVectores(vector<float>& A, vector<float>& B) {
 float TiempoGPU(vector<float>& A, vector<float>& B, vector<float>& C) {
     float *d_A, *d_B, *d_C;
     size_t size = N * sizeof(float);
-
+ 
     cudaMalloc(&d_A, size);
     cudaMalloc(&d_B, size);
     cudaMalloc(&d_C, size);
