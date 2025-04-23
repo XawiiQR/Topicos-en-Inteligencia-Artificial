@@ -3,13 +3,13 @@
 int main()
 {
     int noOfDevices;
-    /* get no. of device */
+    
     cudaGetDeviceCount (&noOfDevices);
 
     cudaDeviceProp prop;
     for (int i = 0; i < noOfDevices; i++)
     {
-        /* get device properties */
+        
         cudaGetDeviceProperties (&prop, i);
 
         printf("Device Name:\t%s\n", prop.name);
