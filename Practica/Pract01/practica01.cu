@@ -2,7 +2,7 @@
 #include <stdlib.h>
 #include <cuda_runtime.h>
 
-#define N 24  
+
 #define BLOCK_SIZE 16 
 
 // Función Kernel que se ejecuta en el Device para la suma de vectores
@@ -53,6 +53,7 @@ int main(void) {
     // Parte 2: Suma de Vectores
     float *a_h, *b_h, *c_h;
     float *a_d, *b_d, *c_d;
+    int N=24;
     size_t size = N * sizeof(float); 
 
     
