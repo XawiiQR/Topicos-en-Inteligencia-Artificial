@@ -2,7 +2,7 @@
 #include <stdlib.h>
 #include <cuda_runtime.h>
 
-#define N 24  // Número de elementos en los arreglos (puedes probar 1000000)
+  // Número de elementos en los arreglos (puedes probar 1000000)
 
 // Función Kernel que se ejecuta en el Device
 __global__ void suma_vectores(float *c, float *a, float *b, int N) {
@@ -17,7 +17,7 @@ int main(void) {
     float *a_h, *b_h, *c_h;
     // Punteros a arreglos en el Device
     float *a_d, *b_d, *c_d;
-
+    int N=10000;
     size_t size = N * sizeof(float);  // Tamaño de los arreglos
 
     // Pedimos memoria en el Host
