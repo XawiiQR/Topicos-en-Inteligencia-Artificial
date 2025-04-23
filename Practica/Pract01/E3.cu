@@ -1,84 +1,103 @@
-#include <iostream>
+#include <stdio.h>
+#include <stdlib.h>
 #include <cuda_runtime.h>
 
-#define TILE_WIDTH 16  // Define el tamaño de los bloques de hilos
+#define BLOCK_SIZE 16  // Tamaño del bloque (ajustable)
 
-// Kernel de multiplicación de matrices
-__global__ void matrixMultiply(float *A, float *B, float *C, int m, int n, int p) {
-    // Índices de los hilos
-    int row = blockIdx.y * blockDim.y + threadIdx.y; // Índice de fila
-    int col = blockIdx.x * blockDim.x + threadIdx.x; // Índice de columna
+int div_up(int x, int y) {
+    return (x + y - 1) / y;  // Redondear hacia arriba
+}
 
-    // Comprobamos si el hilo está dentro de los límites de la matriz resultante
-    if (row < m && col < p) {
-        float value = 0;
-        // Sumamos los productos de la multiplicación de A y B
-        for (int i = 0; i < n; ++i) {
-            value += A[row * n + i] * B[i * p + col];
+// Función Kernel que se ejecuta en el Device
+__global__ void Multiplica_Matrices_GM(float *C, float *A, float *B, int nfil, int ncol) {
+    int idx = blockIdx.x * blockDim.x + threadIdx.x;  // Índice de la fila
+    int idy = blockIdx.y * blockDim.y + threadIdx.y;  // Índice de la columna
+    int index = idy * ncol + idx;
+
+    if (idy < nfil && idx < ncol) {
+        float sum = 0.0f;
+        for (int k = 0; k < ncol; k++) {
+            sum += A[idy * ncol + k] * B[k * ncol + idx];
         }
-        C[row * p + col] = value;
+        C[index] = sum;
     }
 }
 
-int main() {
-    int m = 512; // Número de filas en A y C
-    int n = 512; // Número de columnas en A y filas en B
-    int p = 512; // Número de columnas en B y C
+int main(void) {
+    // Punteros a matrices en el Host
+    float *A_h, *B_h, *C_h;
+    // Punteros a matrices en el Device
+    float *A_d, *B_d, *C_d;
+    
+    int nfil = 12;  // Número de filas
+    int ncol = 12;  // Número de columnas
+    int N = nfil * ncol;  // Número de elementos en la matriz
 
-    size_t sizeA = m * n * sizeof(float);
-    size_t sizeB = n * p * sizeof(float);
-    size_t sizeC = m * p * sizeof(float);
+    size_t size = N * sizeof(float);  // Tamaño de los arreglos
 
-    // Reserva memoria en el host
-    float *h_A = (float*)malloc(sizeA);
-    float *h_B = (float*)malloc(sizeB);
-    float *h_C = (float*)malloc(sizeC);
+    // GPU Time
+    cudaEvent_t start, stop;
+    float time;
+    cudaEventCreate(&start);
+    cudaEventCreate(&stop);
 
-    // Inicializar las matrices A y B con valores
-    for (int i = 0; i < m * n; i++) {
-        h_A[i] = 1.0f; // Puedes cambiar estos valores a lo que necesites
-    }
-    for (int i = 0; i < n * p; i++) {
-        h_B[i] = 1.0f;
-    }
+    // Pedimos memoria en el Host
+    A_h = (float *)malloc(size);
+    B_h = (float *)malloc(size);
+    C_h = (float *)malloc(size);
 
-    // Reserva memoria en el dispositivo
-    float *d_A, *d_B, *d_C;
-    cudaMalloc((void**)&d_A, sizeA);
-    cudaMalloc((void**)&d_B, sizeB);
-    cudaMalloc((void**)&d_C, sizeC);
-
-    // Copia las matrices del host a la memoria del dispositivo
-    cudaMemcpy(d_A, h_A, sizeA, cudaMemcpyHostToDevice);
-    cudaMemcpy(d_B, h_B, sizeB, cudaMemcpyHostToDevice);
-
-    // Definir las dimensiones de los bloques y la rejilla
-    dim3 threadsPerBlock(TILE_WIDTH, TILE_WIDTH);
-    dim3 numBlocks((p + TILE_WIDTH - 1) / TILE_WIDTH, (m + TILE_WIDTH - 1) / TILE_WIDTH);
-
-    // Llamar al kernel de multiplicación de matrices
-    matrixMultiply<<<numBlocks, threadsPerBlock>>>(d_A, d_B, d_C, m, n, p);
-
-    // Copia el resultado desde la memoria del dispositivo al host
-    cudaMemcpy(h_C, d_C, sizeC, cudaMemcpyDeviceToHost);
-
-    // Libera la memoria del dispositivo
-    cudaFree(d_A);
-    cudaFree(d_B);
-    cudaFree(d_C);
-
-    // Mostrar el resultado de la matriz C (opcional)
-    for (int i = 0; i < m; i++) {
-        for (int j = 0; j < p; j++) {
-            std::cout << h_C[i * p + j] << " ";
+    // Inicializamos las matrices A y B en el Host
+    for (int i = 0; i < nfil; i++) {
+        for (int j = 0; j < ncol; j++) {
+            A_h[i * ncol + j] = 1.0f;  // Valor inicial de A
+            B_h[i * ncol + j] = 2.0f;  // Valor inicial de B
         }
-        std::cout << std::endl;
     }
 
-    // Liberar la memoria del host
-    free(h_A);
-    free(h_B);
-    free(h_C);
+    // Pedimos memoria en el Device
+    cudaMalloc((void **) &A_d, size);
+    cudaMalloc((void **) &B_d, size);
+    cudaMalloc((void **) &C_d, size);
+
+    // Pasamos las matrices A y B del Host al Device
+    cudaMemcpy(A_d, A_h, size, cudaMemcpyHostToDevice);
+    cudaMemcpy(B_d, B_h, size, cudaMemcpyHostToDevice);
+
+    // Realizamos el cálculo en el Device
+    dim3 block_size(BLOCK_SIZE, BLOCK_SIZE);
+    dim3 n_blocks(div_up(ncol, BLOCK_SIZE), div_up(nfil, BLOCK_SIZE));
+    cudaEventRecord(start);
+    Multiplica_Matrices_GM<<<n_blocks, block_size>>>(C_d, A_d, B_d, nfil, ncol);
+    cudaEventRecord(stop);
+    
+    // Esperamos a que termine el kernel
+    cudaEventSynchronize(stop);
+    
+    // Pasamos el resultado del Device al Host
+    cudaMemcpy(C_h, C_d, size, cudaMemcpyDeviceToHost);
+
+    // Mostrar el resultado
+    printf("\nMatriz C:\n");
+    for (int i = 0; i < nfil; i++) {
+        for (int j = 0; j < ncol; j++) {
+            printf("%2.2f ", C_h[i * ncol + j]);
+        }
+        printf("\n");
+    }
+
+    // Calculamos el tiempo de ejecución en la GPU
+    cudaEventElapsedTime(&time, start, stop);
+    printf("Tiempo de ejecución: %3.1f ms\n", time);
+
+    // Liberamos la memoria del Host
+    free(A_h);
+    free(B_h);
+    free(C_h);
+
+    // Liberamos la memoria del Device
+    cudaFree(A_d);
+    cudaFree(B_d);
+    cudaFree(C_d);
 
     return 0;
 }
