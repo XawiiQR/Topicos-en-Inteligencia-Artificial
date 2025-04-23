@@ -77,6 +77,22 @@ int main(void) {
     cudaMemcpy(C_h, C_d, size, cudaMemcpyDeviceToHost);
 
     // Mostrar el resultado
+    printf("\nMatriz A:\n");
+    for (int i = 0; i < nfil; i++) {
+        for (int j = 0; j < ncol; j++) {
+            printf("%2.2f ", A_h[i * ncol + j]);
+        }
+        printf("\n");
+    }
+
+    printf("\nMatriz B:\n");
+    for (int i = 0; i < nfil; i++) {
+        for (int j = 0; j < ncol; j++) {
+            printf("%2.2f ", B_h[i * ncol + j]);
+        }
+        printf("\n");
+    }
+
     printf("\nMatriz C:\n");
     for (int i = 0; i < nfil; i++) {
         for (int j = 0; j < ncol; j++) {
