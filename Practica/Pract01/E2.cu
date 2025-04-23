@@ -17,7 +17,7 @@ int main(void) {
     float *a_h, *b_h, *c_h;
     // Punteros a arreglos en el Device
     float *a_d, *b_d, *c_d;
-    int N=10000;
+    int N=10;
     size_t size = N * sizeof(float);  // Tamaño de los arreglos
 
     // Pedimos memoria en el Host
